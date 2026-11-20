@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CYBER BREACH: THE HACKER PROTOCOL</title>
+<style>
+  :root {
+    --bg: #05080a;
+    --panel: #0b1116;
+    --panel-alt: #101820;
+    --border: #1c2e3d;
+    --green: #00ff9d;
+    --green-dim: rgba(0, 255, 157, 0.12);
+    --blue: #00c8ff;
+    --blue-dim: rgba(0, 200, 255, 0.12);
+    --amber: #ffb700;
+    --red: #ff3355;
+    --text: #dce8f2;
+    --muted: #688296;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg); color: var(--text);
+    font-family: 'Consolas', 'Courier New', monospace;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+
+  /* TOP SOC HEADER */
+  .soc-header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 12px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-shrink: 0;
+  }
+  .brand { display: flex; flex-direction: column; }
+  .brand-title { color: var(--green); font-weight: bold; font-size: 13px; letter-spacing: 1px; }
+  .brand-rank { color: var(--blue); font-size: 10px; font-weight: bold; }
+  .hud-metrics { display: flex; gap: 6px; align-items: center; }
+  .metric-pill {
+    background: var(--panel-alt); border: 1px solid var(--border);
+    padding: 3px 7px; border-radius: 4px; font-size: 11px;
+  }
+  .metric-pill span { font-weight: bold; }
+  .audio-btn {
+    background: var(--panel-alt); border: 1px solid var(--border); color: var(--green);
+    padding: 4px 7px; border-radius: 4px; font-size: 11px; cursor: pointer;
+  }
+
+  /* NAVIGATION TABS */
+  .nav-tabs {
+    display: flex; background: #080d12; border-bottom: 1px solid var(--border);
+    flex-shrink: 0; overflow-x: auto;
+  }
+  .nav-tabs button {
+    flex: 1; min-width: 72px; background: none; border: none; color: var(--muted);
+    padding: 9px 4px; font-family: inherit; font-size: 10px; font-weight: bold;
+    border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap;
+  }
+  .nav-tabs button.active {
+    color: var(--green); border-bottom-color: var(--green); background: var(--green-dim);
+  }
+
+  /* VIEWS */
+  .view { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+  .view.active { display: flex; }
+
+  /* AI FIREWALL & THREAT MONITOR STRIP */
+  .threat-bar {
+    background: var(--panel-alt); border-bottom: 1px solid var(--border);
+    padding: 6px 12px; font-size: 11px; flex-shrink: 0;
+  }
+  .threat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .ai-status { color: var(--blue); font-weight: bold; }
+  .ai-status.alert { color: var(--red); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .meter-bg { width: 100%; height: 5px; background: #16232e; border-radius: 3px; overflow: hidden; }
+  .meter-fill { height: 100%; width: 0%; background: var(--green); transition: width 0.25s, background 0.25s; }
+
+  /* TERMINAL AREA */
+  .terminal-out {
+    flex: 1; padding: 10px 12px; overflow-y: auto; font-size: 12px; line-height: 1.48;
+    word-break: break-word; background: radial-gradient(circle at top right, #0a141d, #05080a);
+  }
+  .t-line { margin-bottom: 4px; }
+  .t-sys { color: var(--blue); }
+  .t-ok { color: var(--green); }
+  .t-warn { color: var(--amber); }
+  .t-err { color: var(--red); }
+  .t-cmd { color: #ffffff; font-weight: bold; }
+  .t-ai { color: #d67bff; border-left: 2px solid #d67bff; padding-left: 6px; }
+
+  /* QUICK COMMAND BAR */
+  .cmd-chips {
+    display: flex; gap: 6px; padding: 6px 10px; overflow-x: auto;
+    background: #080d12; border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  .chip {
+    background: var(--panel-alt); border: 1px solid var(--border); color: var(--green);
+    padding: 5px 9px; border-radius: 4px; font-family: inherit; font-size: 11px;
+    white-space: nowrap; cursor: pointer; flex-shrink: 0;
+  }
+  .chip:active { background: var(--green); color: #000; }
+
+  .input-bar {
+    display: flex; align-items: center; background: var(--panel);
+    border-top: 1px solid var(--border); padding: 8px 10px; flex-shrink: 0;
+  }
+  .prompt-prefix { color: var(--green); font-weight: bold; margin-right: 6px; font-size: 12px; }
+  .cli-input {
+    flex: 1; background: transparent; border: none; color: #fff;
+    font-family: inherit; font-size: 13px; outline: none;
+  }
+  .exec-btn {
+    background: var(--green); color: #000; border: none; padding: 6px 12px;
+    border-radius: 4px; font-family: inherit; font-weight: bold; font-size: 11px; cursor: pointer;
+  }
+
+  /* SCROLLABLE CONTAINERS */
+  .scroll-area {
+    flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 12px;
+  }
+  .card.locked { opacity: 0.45; }
+  .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .card-title { color: var(--green); font-weight: bold; font-size: 13px; }
+  .card-desc { color: var(--muted); font-size: 11px; line-height: 1.4; margin-bottom: 8px; }
+  .badge-stage {
+    font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: bold;
+    background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(0,200,255,0.3);
+  }
+  .btn-group { display: flex; gap: 8px; }
+  .btn {
+    flex: 1; padding: 7px 10px; border-radius: 4px; font-family: inherit; font-size: 11px;
+    font-weight: bold; cursor: pointer; border: 1px solid var(--green);
+    background: var(--green-dim); color: var(--green); text-align: center;
+  }
+  .btn.primary { background: var(--green); color: #000; }
+  .btn.info { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* SOC TOPOLOGY & TRAFFIC CANVAS */
+  .soc-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  canvas { width: 100%; background: #060b10; border: 1px solid var(--border); border-radius: 6px; display: block; }
+  .log-box {
+    background: #060b10; border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px; font-size: 11px; max-height: 140px; overflow-y: auto; color: var(--muted);
+  }
+
+  /* MODAL */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+    display: none; align-items: center; justify-content: center; padding: 14px; z-index: 100;
+  }
+  .modal-bg.open { display: flex; }
+  .modal-box {
+    width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto;
+    background: var(--panel); border: 1px solid var(--blue); border-radius: 8px;
+    padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .modal-title { color: var(--blue); font-weight: bold; font-size: 14px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  .code-box {
+    background: #05080a; border: 1px solid var(--border); padding: 8px; border-radius: 4px;
+    font-size: 11px; color: var(--green); white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+
+  <!-- SOC TOP BAR -->
+  <div class="soc-header">
+    <div class="brand">
+      <div class="brand-title">CYBER BREACH: PROTOCOL</div>
+      <div class="brand-rank" id="hud-rank">RANK: NOVICE</div>
+    </div>
+    <div class="hud-metrics">
+      <div class="metric-pill">LVL <span id="hud-lvl" style="color:var(--green)">1</span>/30</div>
+      <div class="metric-pill"><span id="hud-xp" style="color:var(--blue)">0</span> XP</div>
+      <div class="metric-pill">$<span id="hud-cr" style="color:var(--amber)">200</span></div>
+      <button class="audio-btn" id="audio-toggle" onclick="toggleAudio()">SFX: ON</button>
+    </div>
+  </div>
+
+  <!-- NAVIGATION -->
+  <div class="nav-tabs">
+    <button id="tab-term" class="active" onclick="switchTab('term')">TERMINAL</button>
+    <button id="tab-levels" onclick="switchTab('levels')">30 MISI</button>
+    <button id="tab-soc" onclick="switchTab('soc')">SOC & TOPOLOGI</button>
+    <button id="tab-tools" onclick="switchTab('tools')">WORKSTATION</button>
+    <button id="tab-stats" onclick="switchTab('stats')">REKOR & RANK</button>
+  </div>
+
+  <!-- VIEW 1: INTERACTIVE LINUX TERMINAL -->
+  <div id="view-term" class="view active">
+    <div class="threat-bar">
+      <div class="threat-row">
+        <span id="mission-header">SANDBOX: Pilih Misi di Tab [30 MISI]</span>
+        <span id="ai-state" class="ai-status">AI FW: STANDBY</span>
+      </div>
+      <div class="threat-row">
+        <span style="color:var(--muted)">IDS INTRUSION / TRACE LEVEL</span>
+        <span id="trace-val" style="color:var(--green)">0%</span>
+      </div>
+      <div class="meter-bg"><div id="trace-meter" class="meter-fill"></div></div>
+    </div>
+
+    <div id="terminal-out" class="terminal-out"></div>
+    <div id="cmd-chips" class="cmd-chips"></div>
+
+    <div class="input-bar">
+      <span class="prompt-prefix">operator@soc:~#</span>
+      <input id="cli-input" class="cli-input" type="text" placeholder="Ketik perintah (mis. help, nmap, analyze)..."
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <button class="exec-btn" onclick="runCLI()">EXEC</button>
+    </div>
+  </div>
+
+  <!-- VIEW 2: 30 LEVELS (6 STAGES) -->
+  <div id="view-levels" class="view">
+    <div id="levels-container" class="scroll-area"></div>
+  </div>
+
+  <!-- VIEW 3: SOC DASHBOARD & TOPOLOGY -->
+  <div id="view-soc" class="view">
+    <div class="scroll-area soc-grid">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">PETA TOPOLOGI JARINGAN VIRTUAL</span>
+          <span class="badge-stage" id="topo-status">ISOLATED SANDBOX</span>
+        </div>
+        <canvas id="topo-canvas" height="170"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">GRAFIK LALU LINTAS PAKET (TCP/UDP/HTTPS)</span>
+          <span style="font-size:10px; color:var(--green)" id="pkt-rate">0 pkt/s</span>
+        </div>
+        <canvas id="traffic-canvas" height="100"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:6px;">LIVE IDS / SIEM SECURITY LOGS</div>
+        <div id="soc-logs" class="log-box">Menunggu telemetri jaringan...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 4: WORKSTATION & TOOLS UPGRADE -->
+  <div id="view-tools" class="view">
+    <div id="tools-container" class="scroll-area"></div>
+  </div>
+
+  <!-- VIEW 5: STATS, ACHIEVEMENTS & LEADERBOARD -->
+  <div id="view-stats" class="view">
+    <div id="stats-container" class="scroll-area"></div>
+  </div>
+
+  <!-- BRIEFING / EVALUATION MODAL -->
+  <div id="modal-bg" class="modal-bg">
+    <div class="modal-box">
+      <div id="modal-title" class="modal-title">MISSION BRIEFING</div>
+      <div id="modal-content" style="font-size:12px; line-height:1.5;"></div>
+      <div id="modal-actions" class="btn-group"></div>
+    </div>
+  </div>
+
+<script>
+// ==================== 1. WEB AUDIO SYNTHESIZER (NO EXTERNAL FILES) ====================
+let audioEnabled = true;
+let audioCtx = null;
+
+function initAudio() {
+  if (!audioCtx) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) audioCtx = new AudioContext();
+  }
+}
+
+function playTone(freq, type, duration, vol = 0.06) {
+  if (!audioEnabled) return;
+  try {
+    initAudio();
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  } catch (e) {}
+}
+
+function sfxKey() { playTone(520 + Math.random() * 140, 'triangle', 0.03, 0.03); }
+function sfxSuccess() {
+  playTone(587.33, 'sine', 0.12, 0.08);
+  setTimeout(() => playTone(880, 'sine', 0.22, 0.08), 110);
+}
+function sfxAlert() {
+  playTone(220, 'sawtooth', 0.18, 0.09);
+  setTimeout(() => playTone(165, 'sawtooth', 0.25, 0.09), 160);
+}
+function sfxNet() { playTone(740, 'sine', 0.07, 0.04); }
+
+function toggleAudio() {
+  audioEnabled = !audioEnabled;
+  document.getElementById('audio-toggle').textContent = audioEnabled ? 'SFX: ON' : 'SFX: OFF';
+}
+
+// ==================== 2. PERSISTENT SAVE & RANKS ====================
+const RANKS = [
+  { minXp: 0, title: "NOVICE" },
+  { minXp: 300, title: "APPRENTICE" },
+  { minXp: 800, title: "OPERATOR" },
+  { minXp: 1600, title: "SPECIALIST" },
+  { minXp: 2800, title: "EXPERT" },
+  { minXp: 4500, title: "ELITE" },
+  { minXp: 7000, title: "CYBER LEGEND" }
+];
+
+const DEFAULT_SAVE = {
+  unlockedLevel: 1,
+  completedLevels: [],
+  xp: 0,
+  credits: 200,
+  mistakesTotal: 0,
+  upgrades: {
+    cpu: 1,       // increases analysis speed & time buffer
+    stealth: 1,   // reduces AI firewall trace sensitivity
+    forensics: 1  // unlocks deeper packet & log hints
+  },
+  achievements: []
+};
+
+let save = (() => {
+  try {
+    const raw = localStorage.getItem('cyber_breach_protocol_v1');
+    return raw ? { ...DEFAULT_SAVE, ...JSON.parse(raw) } : JSON.parse(JSON.stringify(DEFAULT_SAVE));
+  } catch (e) {
+    return JSON.parse(JSON.stringify(DEFAULT_SAVE));
+  }
+})();
+
+function persist() {
+  try { localStorage.setItem('cyber_breach_protocol_v1', JSON.stringify(save)); } catch (e) {}
+  updateHUD();
+}
+
+function getRankTitle(xp) {
+  let r = RANKS[0].title;
+  for (const item of RANKS) {
+    if (xp >= item.minXp) r = item.title;
+  }
+  return r;
+}
+
+function updateHUD() {
+  document.getElementById('hud-lvl').textContent = save.unlockedLevel;
+  document.getElementById('hud-xp').textContent = save.xp;
+  document.getElementById('hud-cr').textContent = save.credits;
+  document.getElementById('hud-rank').textContent = 'RANK: ' + getRankTitle(save.xp);
+}
+
+// ==================== 3. COMPLETE 30 LEVELS DATABASE (6 STAGES) ====================
+const MISSIONS = [
+  // STAGE 1 – BEGINNER HACKER
+  { id: 1, stage: "STAGE 1: BEGINNER HACKER", diff: "Mudah", title: "First Connection",
+    brief: "Kenali lingkungan terminal Linux sandbox dan verifikasi konektivitas ke gateway pelatihan.",
+    objective: "Jalankan diagnostik koneksi ke host 10.10.1.1 dan baca token otorisasi.",
+    host: "10.10.1.1", domain: "lab-gw.local", tool: "ping",
+    steps: [
+      { cmd: "ping 10.10.1.1", out: "64 bytes from 10.10.1.1: icmp_seq=1 ttl=64 time=2.1 ms [HOST ONLINE]", hint: "Gunakan perintah: ping 10.10.1.1" },
+      { cmd: "ls", out: "readme.txt   auth_token.key", hint: "Periksa isi direktori dengan: ls" },
+      { cmd: "cat auth_token.key", out: "TOKEN_VERIFIED: [BREACH-01-INIT]", hint: "Baca isi kunci dengan: cat auth_token.key" }
+    ],
+    traceRate: 0.4, xp: 80, cr: 100
+  },
+  { id: 2, stage: "STAGE 1: BEGINNER HACKER", diff: "Mudah", title: "Network Discovery",
+    brief: "Lakukan pemindaian subnet internal untuk memetakan seluruh perangkat aktif dalam jaringan virtual.",
+    objective: "Temukan IP server cadangan tersembunyi pada subnet 10.10.2.0/24.",
+    host: "10.10.2.14", domain: "subnet-alpha.local", tool: "netscan",
+    steps: [
+      { cmd: "netscan 10.10.2.0/24", out: "ACTIVE HOSTS:
+- 10.10.2.1 (Gateway)
+- 10.10.2.14 (Backup-Vault-01)
+- 10.10.2.25 (Printer-Net)", hint: "Pindai jaringan dengan: netscan 10.10.2.0/24" },
+      { cmd: "dnslookup 10.10.2.14", out: "PTR RECORD: backup-vault.internal.sandbox", hint: "Verifikasi DNS host target: dnslookup 10.10.2.14" },
+      { cmd: "connect 10.10.2.14", out: "SESSION ESTABLISHED WITH backup-vault.internal.sandbox", hint: "Hubungkan ke host target: connect 10.10.2.14" }
+    ],
+    traceRate: 0.5, xp: 90, cr: 110
+  },
+  { id: 3, stage: "STAGE 1: BEGINNER HACKER", diff: "Mudah", title: "Port Investigation",
+    brief: "Server web internal melaporkan layanan tidak standar berjalan pada port TCP.",
+    objective: "Identifikasi layanan rentan pada 10.10.3.8 dan verifikasi banner protokol.",
+    host: "10.10.3.8", domain: "dev-srv.local", tool: "nmap",
+    steps: [
+      { cmd: "nmap 10.10.3.8", out: "PORT     STATE  SERVICE
+22/tcp   closed ssh
+80/tcp   open   http
+8080/tcp open   http-proxy-dev (VULNERABLE)", hint: "Pindai port terbuka dengan: nmap 10.10.3.8" },
+      { cmd: "banner 10.10.3.8 8080", out: "HTTP/1.1 200 OK | Server: DevTest-Server/0.9-unpatched", hint: "Periksa banner layanan port 8080: banner 10.10.3.8 8080" },
+      { cmd: "verify CVE-2026-0103", out: "VULNERABILITY CONFIRMED: Unauthenticated Debug Endpoint on Port 8080", hint: "Konfirmasi temuan kerentanan: verify CVE-2026-0103" }
+    ],
+    traceRate: 0.55, xp: 100, cr: 120
+  },
+  { id: 4, stage: "STAGE 1: BEGINNER HACKER", diff: "Mudah", title: "Password Challenge",
+    brief: "Audit keamanan menemukan file hash kredensial dengan kompleksitas lemah.",
+    objective: "Analisis kekuatan hash dan uji ketahanan kebijakan kata sandi.",
+    host: "10.10.4.20", domain: "auth-audit.local", tool: "hashcheck",
+    steps: [
+      { cmd: "cat shadow.bak", out: "admin_test:$1$salt$7f8a9d2e1c (MD5-LEGACY)", hint: "Lihat berkas cadangan hash: cat shadow.bak" },
+      { cmd: "hashcheck shadow.bak", out: "AUDIT RESULT: Weak MD5 hash detected. Policy violation: No salt complexity.", hint: "Jalankan audit kekuatan hash: hashcheck shadow.bak" },
+      { cmd: "enforce_policy strong", out: "PASSWORD POLICY UPDATED: Argon2id + Min 14 Chars Enforced.", hint: "Terapkan kebijakan sandi kuat: enforce_policy strong" }
+    ],
+    traceRate: 0.6, xp: 110, cr: 130
+  },
+  { id: 5, stage: "STAGE 1: BEGINNER HACKER", diff: "Mudah", title: "First Firewall",
+    brief: "Sebuah aturan firewall salah konfigurasi membiarkan lalu lintas masuk berbahaya ke database.",
+    objective: "Periksa tabel aturan inbound firewall dan tutup celah port 3306.",
+    host: "10.10.5.1", domain: "fw-edge01.local", tool: "fwctl",
+    steps: [
+      { cmd: "fwctl list", out: "RULE 1: ALLOW TCP 443 INBOUND
+RULE 2: ALLOW TCP 3306 INBOUND FROM 0.0.0.0/0 [MISCONFIGURED]", hint: "Periksa aturan firewall saat ini: fwctl list" },
+      { cmd: "fwctl deny 3306", out: "RULE 2 UPDATED: DENY TCP 3306 INBOUND FROM 0.0.0.0/0", hint: "Blokir akses publik port 3306: fwctl deny 3306" },
+      { cmd: "fwctl reload", out: "FIREWALL CONFIGURATION RELOADED & VERIFIED SECURE.", hint: "Muat ulang konfigurasi firewall: fwctl reload" }
+    ],
+    traceRate: 0.65, xp: 125, cr: 150
+  },
+
+  // STAGE 2 – INTERMEDIATE HACKER
+  { id: 6, stage: "STAGE 2: INTERMEDIATE HACKER", diff: "Menengah", title: "Network Mapping",
+    brief: "Jaringan segmen B memiliki beberapa router perantara. Petakan rute paket.",
+    objective: "Lacak jalur routing ke core-db dan identifikasi hop mencurigakan.",
+    host: "172.16.10.5", domain: "core-db.corp", tool: "traceroute",
+    steps: [
+      { cmd: "traceroute 172.16.10.5", out: "1: 10.0.0.1 (1ms)
+2: 172.16.1.1 (4ms)
+3: 172.16.99.254 [ROGUE-HOP]
+4: 172.16.10.5 (9ms)", hint: "Lacak jalur rute jaringan: traceroute 172.16.10.5" },
+      { cmd: "inspect_hop 172.16.99.254", out: "WARNING: Unauthorized ARP/Packet Interceptor detected on 172.16.99.254", hint: "Periksa node mencurigakan: inspect_hop 172.16.99.254" },
+      { cmd: "isolate 172.16.99.254", out: "ROGUE NODE ISOLATED. Routing table restored.", hint: "Isolasi node ilegal tersebut: isolate 172.16.99.254" }
+    ],
+    traceRate: 0.75, xp: 140, cr: 160
+  },
+  { id: 7, stage: "STAGE 2: INTERMEDIATE HACKER", diff: "Menengah", title: "Packet Investigation",
+    brief: "Sensor jaringan menangkap lonjakan trafik anomali pada protokol HTTP/UDP.",
+    objective: "Analisis dump paket PCAP untuk menemukan sumber kebocoran data.",
+    host: "172.16.12.30", domain: "sniffer-node.corp", tool: "tcpdump",
+    steps: [
+      { cmd: "tcpdump -r capture.pcap", out: "PKT #412: 172.16.12.30 -> 198.51.100.77 [UDP 5353] Payload: EXFIL_CHUNK_01", hint: "Baca tangkapan paket jaringan: tcpdump -r capture.pcap" },
+      { cmd: "pkt_filter 198.51.100.77", out: "FILTERED 48 PACKETS: Covert DNS/UDP Tunneling detected to 198.51.100.77", hint: "Filter lalu lintas tujuan mencurigakan: pkt_filter 198.51.100.77" },
+      { cmd: "block_ip 198.51.100.77", out: "EGRESS FILTER APPLIED: 198.51.100.77 BLACKHOLED.", hint: "Blokir alamat IP tujuan eksfiltrasi: block_ip 198.51.100.77" }
+    ],
+    traceRate: 0.8, xp: 150, cr: 175
+  },
+  { id: 8, stage: "STAGE 2: INTERMEDIATE HACKER", diff: "Menengah", title: "SQL Injection Lab",
+    brief: "Aplikasi portal latihan memiliki parameter query tanpa sanitasi input.",
+    objective: "Uji kerentanan SQLi pada form login sandbox dan terapkan parameterized query.",
+    host: "172.16.14.11", domain: "webapp-lab.corp", tool: "sqlaudit",
+    steps: [
+      { cmd: "sqlaudit /login", out: "INPUT FIELD 'user' REFLECTED RAW IN SQL: SELECT * FROM users WHERE user='$input'", hint: "Audit endpoint login aplikasi: sqlaudit /login" },
+      { cmd: "test_payload "' OR 1=1--"", out: "VULNERABILITY PROVEN: Authentication bypass triggered in sandbox.", hint: "Uji payload injeksi aman: test_payload "' OR 1=1--"" },
+      { cmd: "patch_sqli /login", out: "REMEDIATION APPLIED: Prepared Statements enabled on /login.", hint: "Terapkan perbaikan kode: patch_sqli /login" }
+    ],
+    traceRate: 0.85, xp: 165, cr: 190
+  },
+  { id: 9, stage: "STAGE 2: INTERMEDIATE HACKER", diff: "Menengah", title: "Web Vulnerability",
+    brief: "Pemindai web mendeteksi kebocoran direktori dan header keamanan yang hilang.",
+    objective: "Identifikasi file konfigurasi terekspos dan amankan server HTTP.",
+    host: "172.16.15.9", domain: "portal-web.corp", tool: "webscan",
+    steps: [
+      { cmd: "webscan https://portal-web.corp", out: "FOUND: /.env (HTTP 200 OK) | MISSING: Content-Security-Policy, X-Frame-Options", hint: "Pindai kerentanan aplikasi web: webscan https://portal-web.corp" },
+      { cmd: "revoke_public /.env", out: "ACCESS RESTRICTED: /.env returns HTTP 403 Forbidden.", hint: "Tutup akses publik berkas .env: revoke_public /.env" },
+      { cmd: "set_headers strict", out: "SECURITY HEADERS ENABLED: CSP, HSTS, X-Frame-Options active.", hint: "Aktifkan header keamanan HTTP: set_headers strict" }
+    ],
+    traceRate: 0.9, xp: 175, cr: 200
+  },
+  { id: 10, stage: "STAGE 2: INTERMEDIATE HACKER", diff: "Menengah", title: "Access Control",
+    brief: "Seorang pengguna biasa tercatat memiliki hak akses setara administrator.",
+    objective: "Audit daftar ACL dan cabut eskalasi hak akses ilegal.",
+    host: "172.16.18.4", domain: "iam-srv.corp", tool: "aclcheck",
+    steps: [
+      { cmd: "aclcheck users", out: "uid=1001(staff_01) groups=staff,sudo,wheel [PRIVILEGE ESCALATION]", hint: "Periksa daftar hak akses pengguna: aclcheck users" },
+      { cmd: "revoke_sudo staff_01", out: "USER staff_01 REMOVED FROM sudo, wheel.", hint: "Cabut hak akses root dari staff_01: revoke_sudo staff_01" },
+      { cmd: "audit_commit", out: "IAM ACCESS CONTROL MATRIX VERIFIED.", hint: "Simpan perubahan audit IAM: audit_commit" }
+    ],
+    traceRate: 0.95, xp: 190, cr: 220
+  },
+
+  // STAGE 3 – ADVANCED HACKER
+  { id: 11, stage: "STAGE 3: ADVANCED HACKER", diff: "Sulit", title: "Advanced Firewall",
+    brief: "Firewall perimeter memiliki konflik urutan rule (shadowing) antara inbound dan outbound.",
+    objective: "Susun ulang prioritas aturan firewall tanpa memutus layanan HTTPS.",
+    host: "10.20.1.1", domain: "fw-core.sec", tool: "fwctl",
+    steps: [
+      { cmd: "fwctl inspect_order", out: "10: ALLOW ANY ANY [SHADOWS ALL RULES BELOW]
+20: DENY TCP 23
+30: ALLOW TCP 443", hint: "Analisis urutan prioritas aturan: fwctl inspect_order" },
+      { cmd: "fwctl delete 10", out: "RULE 10 REMOVED. Explicit deny-by-default policy active.", hint: "Hapus rule berbahaya nomor 10: fwctl delete 10" },
+      { cmd: "fwctl verify_policy", out: "STATEFUL INSPECTION VERIFIED: Only HTTPS (443) permitted.", hint: "Verifikasi kebijakan firewall baru: fwctl verify_policy" }
+    ],
+    traceRate: 1.05, xp: 210, cr: 240
+  },
+  { id: 12, stage: "STAGE 3: ADVANCED HACKER", diff: "Sulit", title: "Intrusion Detection",
+    brief: "IDS memicu peringatan pola pemindaian SYN flood dari segmen eksternal.",
+    objective: "Analisis log IDS dan aktifkan aturan pencegahan intrusi otomatis.",
+    host: "10.20.2.5", domain: "ids-sensor.sec", tool: "idsmon",
+    steps: [
+      { cmd: "idsmon alerts", out: "[ALERT SID:20019] TCP SYN Flood pattern from 203.0.113.44 -> 10.20.2.5:443", hint: "Tampilkan peringatan IDS aktif: idsmon alerts" },
+      { cmd: "idsmon correlate 203.0.113.44", out: "CORRELATION: 14,200 half-open connections in 5 seconds.", hint: "Korelasikan sumber serangan: idsmon correlate 203.0.113.44" },
+      { cmd: "ips_mitigate 203.0.113.44", out: "IPS RULE DEPLOYED: SYN Cookies enabled & attacker dropped.", hint: "Aktifkan mitigasi IPS: ips_mitigate 203.0.113.44" }
+    ],
+    traceRate: 1.1, xp: 225, cr: 260
+  },
+  { id: 13, stage: "STAGE 3: ADVANCED HACKER", diff: "Sulit", title: "Malware Investigation",
+    brief: "Sebuah binary mencurigakan ditemukan di direktori /tmp server aplikasi.",
+    objective: "Jalankan analisis statis di sandbox terisolasi dan ekstrak indikator kompromi (IoC).",
+    host: "10.20.3.19", domain: "sandbox-lab.sec", tool: "sandbox",
+    steps: [
+      { cmd: "sandbox analyze /tmp/svchost.elf", out: "BEHAVIOR: Connects to C2 domain 'dark-relay.invalid' | Persistence: cron.d", hint: "Analisis file di sandbox: sandbox analyze /tmp/svchost.elf" },
+      { cmd: "extract_ioc /tmp/svchost.elf", out: "SHA256: 9f86d081884c7d659a2feaa0c55ad015 | C2: dark-relay.invalid", hint: "Ekstrak hash dan domain C2: extract_ioc /tmp/svchost.elf" },
+      { cmd: "quarantine /tmp/svchost.elf", out: "BINARY QUARANTINED & CRON PERSISTENCE CLEANED.", hint: "Karantina berkas berbahaya: quarantine /tmp/svchost.elf" }
+    ],
+    traceRate: 1.15, xp: 240, cr: 280
+  },
+  { id: 14, stage: "STAGE 3: ADVANCED HACKER", diff: "Sulit", title: "Digital Forensics",
+    brief: "Insiden penghapusan log terjadi pada server transaksi. Lakukan forensik disk.",
+    objective: "Pulihkan artefak jurnal sistem dan identifikasi waktu akses tidak sah.",
+    host: "10.20.4.12", domain: "forensic-img.sec", tool: "forensics",
+    steps: [
+      { cmd: "forensics mount disk0.img", out: "IMAGE MOUNTED READ-ONLY: /mnt/evidence", hint: "Mount citra disk forensik: forensics mount disk0.img" },
+      { cmd: "forensics recover_logs", out: "RECOVERED: auth.log.deleted -> Unauthorized SSH login at 02:14:09 UTC from 198.51.100.12", hint: "Pulihkan log terhapus: forensics recover_logs" },
+      { cmd: "export_timeline", out: "FORENSIC CHAIN OF CUSTODY & TIMELINE SEALED.", hint: "Simpan laporan lini masa forensik: export_timeline" }
+    ],
+    traceRate: 1.2, xp: 260, cr: 300
+  },
+  { id: 15, stage: "STAGE 3: ADVANCED HACKER", diff: "Sulit", title: "Network Defense",
+    brief: "Serangan DDoS aplikasi sedang berlangsung dan membebani CPU gateway.",
+    objective: "Terapkan rate-limiting dan alihkan trafik melalui scrubbing center.",
+    host: "10.20.5.1", domain: "edge-router.sec", tool: "netdef",
+    steps: [
+      { cmd: "netdef status", out: "CPU LOAD: 98% | HTTP GET FLOOD DETECTED ON /api/search", hint: "Periksa status beban jaringan: netdef status" },
+      { cmd: "netdef ratelimit /api/search", out: "RATE LIMIT APPLIED: Max 20 req/min per IP.", hint: "Batasi laju permintaan API: netdef ratelimit /api/search" },
+      { cmd: "netdef scrub_enable", out: "TRAFFIC SCRUBBING ACTIVE. Gateway CPU stabilized at 18%.", hint: "Aktifkan pembersihan trafik: netdef scrub_enable" }
+    ],
+    traceRate: 1.25, xp: 280, cr: 320
+  },
+
+  // STAGE 4 – PROFESSIONAL SECURITY
+  { id: 16, stage: "STAGE 4: PROFESSIONAL SECURITY", diff: "Sangat Sulit", title: "Multi-Layer Firewall",
+    brief: "Arsitektur DMZ dilindungi oleh WAF, Perimeter FW, dan Internal Segmentation FW.",
+    objective: "Sinkronisasikan kebijakan ketiga lapisan firewall untuk menutup jalur lateral movement.",
+    host: "10.30.1.10", domain: "dmz-core.ent", tool: "fwctl",
+    steps: [
+      { cmd: "fwctl audit_layers", out: "LAYER 1 (WAF): OK | LAYER 2 (DMZ): OK | LAYER 3 (INT-SEG): ALLOW SMB 445 FROM DMZ", hint: "Audit semua lapisan firewall: fwctl audit_layers" },
+      { cmd: "fwctl block_lateral 445", out: "LAYER 3 UPDATED: SMB 445 BLOCKED BETWEEN DMZ AND INTERNAL LAN.", hint: "Blokir protokol SMB lintas segmen: fwctl block_lateral 445" },
+      { cmd: "fwctl sync_all", out: "MULTI-LAYER FIREWALL ZERO-TRUST SEGMENTATION ACTIVE.", hint: "Sinkronisasi seluruh lapisan firewall: fwctl sync_all" }
+    ],
+    traceRate: 1.35, xp: 300, cr: 350
+  },
+  { id: 17, stage: "STAGE 4: PROFESSIONAL SECURITY", diff: "Sangat Sulit", title: "Zero-Day Investigation",
+    brief: "Anomali memori terdeteksi pada daemon RPC sebelum vendor merilis patch resmi.",
+    objective: "Analisis crash dump dan terapkan virtual patching pada IPS.",
+    host: "10.30.2.40", domain: "rpc-node.ent", tool: "vulnscan",
+    steps: [
+      { cmd: "vulnscan crashdump.core", out: "HEAP OVERFLOW IN rpc_handler() OFFSET 0x4F2A | NO VENDOR PATCH AVAILABLE", hint: "Analisis berkas crash dump: vulnscan crashdump.core" },
+      { cmd: "build_vpatch 0x4F2A", out: "VIRTUAL PATCH SIGNATURE GENERATED: SIG-ZDAY-2026-88", hint: "Buat tanda tangan virtual patch: build_vpatch 0x4F2A" },
+      { cmd: "deploy_vpatch SIG-ZDAY-2026-88", out: "VIRTUAL PATCH ACTIVE ON IPS. Exploit vector neutralized.", hint: "Terapkan virtual patch ke IPS: deploy_vpatch SIG-ZDAY-2026-88" }
+    ],
+    traceRate: 1.4, xp: 320, cr: 380
+  },
+  { id: 18, stage: "STAGE 4: PROFESSIONAL SECURITY", diff: "Sangat Sulit", title: "Encrypted Traffic",
+    brief: "Lalu lintas keluar menggunakan TLS terenkripsi sehingga isi paket tidak terbaca langsung.",
+    objective: "Analisis metadata TLS (JA3 fingerprint & interval beacon) untuk mendeteksi C2.",
+    host: "10.30.3.77", domain: "tls-proxy.ent", tool: "tlsmeta",
+    steps: [
+      { cmd: "tlsmeta inspect", out: "HOST 10.30.3.77 -> JA3: e7d705a3286e19ea42f587b344ee6865 | BEACON: Every 60.0s exact", hint: "Periksa metadata koneksi TLS: tlsmeta inspect" },
+      { cmd: "tlsmeta match_ja3 e7d705a3286e19ea42f587b344ee6865", out: "THREAT INTEL MATCH: Known Cobalt-Sim Beacon Fingerprint.", hint: "Cocokkan fingerprint JA3: tlsmeta match_ja3 e7d705a3286e19ea42f587b344ee6865" },
+      { cmd: "revoke_cert_session 10.30.3.77", out: "ENCRYPTED C2 CHANNEL TERMINATED & HOST QUARANTINED.", hint: "Putus sesi terenkripsi host: revoke_cert_session 10.30.3.77" }
+    ],
+    traceRate: 1.45, xp: 340, cr: 400
+  },
+  { id: 19, stage: "STAGE 4: PROFESSIONAL SECURITY", diff: "Sangat Sulit", title: "Enterprise Network",
+    brief: "Jaringan korporat mengalami pencurian tiket autentikasi Kerberos (Golden Ticket sim).",
+    objective: "Reset kredensial KRBTGT dan validasi integritas Active Directory virtual.",
+    host: "10.30.4.2", domain: "dc01.ent", tool: "adsec",
+    steps: [
+      { cmd: "adsec check_tickets", out: "ANOMALY: TGT lifetime set to 10 years for account 'svc_backup'", hint: "Audit tiket autentikasi domain: adsec check_tickets" },
+      { cmd: "adsec reset_krbtgt", out: "KRBTGT KEY ROTATED TWICE. Forged tickets invalidated.", hint: "Lakukan rotasi kunci KRBTGT: adsec reset_krbtgt" },
+      { cmd: "adsec harden_dc", out: "DOMAIN CONTROLLER HARDENED & AUDIT PASSED.", hint: "Perkuat konfigurasi Domain Controller: adsec harden_dc" }
+    ],
+    traceRate: 1.5, xp: 360, cr: 430
+  },
+  { id: 20, stage: "STAGE 4: PROFESSIONAL SECURITY", diff: "Sangat Sulit", title: "SOC Emergency",
+    brief: "ALARM MERAH: Ransomware simulasi mulai mengenkripsi file share departemen keuangan.",
+    objective: "Hentikan proses enkripsi dan pulihkan volume dari snapshot bersih sebelum waktu habis.",
+    host: "10.30.5.50", domain: "fin-storage.ent", tool: "soc",
+    steps: [
+      { cmd: "soc kill_proc crypt_locker", out: "PROCESS TERMINATED (PID 4412). Encryption halted at 14%.", hint: "Hentikan proses berbahaya: soc kill_proc crypt_locker" },
+      { cmd: "soc lock_shares", out: "SMB FILE SHARES LOCKED TO PREVENT PROPAGATION.", hint: "Kunci seluruh folder berbagi jaringan: soc lock_shares" },
+      { cmd: "soc restore_snapshot clean_01", out: "ALL FINANCIAL RECORDS RESTORED FROM IMMUTABLE SNAPSHOT.", hint: "Pulihkan data dari snapshot bersih: soc restore_snapshot clean_01" }
+    ],
+    traceRate: 1.65, xp: 400, cr: 480
+  },
+
+  // STAGE 5 – ELITE CYBERSECURITY
+  { id: 21, stage: "STAGE 5: ELITE CYBERSECURITY", diff: "Expert", title: "Advanced Threat Hunting",
+    brief: "Tidak ada alarm IDS yang berbunyi, namun intelijen mengindikasikan keberadaan APT.",
+    objective: "Lakukan perburuan ancaman proaktif pada memori kernel dan scheduled tasks.",
+    host: "10.40.1.8", domain: "hunt-node.elite", tool: "hunt",
+    steps: [
+      { cmd: "hunt memory_hooks", out: "HIDDEN SSDT HOOK FOUND: sys_getdents64 redirected by rootkit_mod", hint: "Periksa hook memori kernel: hunt memory_hooks" },
+      { cmd: "hunt unload_module rootkit_mod", out: "KERNEL MODULE UNLOADED & SYSTEM CALL TABLE RESTORED.", hint: "Hapus modul rootkit tersembunyi: hunt unload_module rootkit_mod" },
+      { cmd: "hunt sweep_cluster", out: "CLUSTER SWEEP COMPLETE: 0 remaining APT artifacts.", hint: "Sapu bersih seluruh klaster: hunt sweep_cluster" }
+    ],
+    traceRate: 1.7, xp: 430, cr: 520
+  },
+  { id: 22, stage: "STAGE 5: ELITE CYBERSECURITY", diff: "Expert", title: "AI Security Defense",
+    brief: "Sistem pertahanan AI musuh memanipulasi aturan routing dan memblokir perintah standar.",
+    objective: "Kalibrasi ulang model deteksi AI dan pulihkan otoritas operator manusia.",
+    host: "10.40.2.99", domain: "aegis-ai.elite", tool: "aicore",
+    steps: [
+      { cmd: "aicore status", out: "AI ENGINE STATUS: ADVERSARIAL DRIFT DETECTED (Confidence: 99.4%)", hint: "Periksa status mesin AI pertahanan: aicore status" },
+      { cmd: "aicore rollback_weights v4.2", out: "MODEL WEIGHTS RESTORED TO VERIFIED BASELINE v4.2.", hint: "Kembalikan bobot model AI ke versi bersih: aicore rollback_weights v4.2" },
+      { cmd: "aicore lock_human_override", out: "HUMAN-IN-THE-LOOP CRYPTOGRAPHIC OVERRIDE ENABLED.", hint: "Kunci kendali operator manusia: aicore lock_human_override" }
+    ],
+    traceRate: 1.8, xp: 460, cr: 560
+  },
+  { id: 23, stage: "STAGE 5: ELITE CYBERSECURITY", diff: "Expert", title: "Multi-Server Investigation",
+    brief: "Serangan terkoordinasi melompat melintasi tiga server: Web, App, dan Database.",
+    objective: "Korelasikan log lintas server dan tutup seluruh vektor masuk secara serentak.",
+    host: "10.40.3.10", domain: "mesh-cluster.elite", tool: "siem",
+    steps: [
+      { cmd: "siem correlate_all", out: "ATTACK PATH: web-01 (SSRF) -> app-02 (Deserialization) -> db-03 (Dump)", hint: "Korelasikan jalur serangan 3 server: siem correlate_all" },
+      { cmd: "siem patch_chain", out: "SSRF FILTER & SERIALIZATION ALLOWLIST DEPLOYED ACROSS CLUSTER.", hint: "Tambal seluruh rantai kerentanan: siem patch_chain" },
+      { cmd: "siem verify_mesh", out: "ALL 3 NODES VERIFIED CLEAN & SYNCHRONIZED.", hint: "Verifikasi integritas ketiga server: siem verify_mesh" }
+    ],
+    traceRate: 1.85, xp: 500, cr: 600
+  },
+  { id: 24, stage: "STAGE 5: ELITE CYBERSECURITY", diff: "Expert", title: "Incident Response",
+    brief: "Kebocoran kunci API produksi terdeteksi pada repositori internal.",
+    objective: "Cabut token lama, putar kunci kriptografi, dan audit penggunaan terakhir.",
+    host: "10.40.4.15", domain: "vault-kms.elite", tool: "kms",
+    steps: [
+      { cmd: "kms audit_keys", out: "KEY_ID prod-master-01 USED FROM UNRECOGNIZED ASN 64512", hint: "Audit penggunaan kunci KMS: kms audit_keys" },
+      { cmd: "kms revoke prod-master-01", out: "KEY prod-master-01 REVOKED IMMEDIATELY.", hint: "Cabut kunci yang bocor: kms revoke prod-master-01" },
+      { cmd: "kms rotate_all", out: "NEW HSM-BACKED KEYS GENERATED & DISTRIBUTED.", hint: "Putar seluruh kunci produksi baru: kms rotate_all" }
+    ],
+    traceRate: 1.95, xp: 540, cr: 650
+  },
+  { id: 25, stage: "STAGE 5: ELITE CYBERSECURITY", diff: "Expert", title: "Critical Infrastructure",
+    brief: "Jaringan kontrol SCADA pembangkit listrik virtual menerima perintah modbus ilegal.",
+    objective: "Filter protokol industri Modbus/TCP dan kunci mode operasi aman.",
+    host: "10.40.5.100", domain: "scada-grid.elite", tool: "scada",
+    steps: [
+      { cmd: "scada monitor_bus", out: "ILLEGAL WRITE COIL COMMAND (FC 0x05) FROM 10.40.9.88", hint: "Pantau lalu lintas bus SCADA: scada monitor_bus" },
+      { cmd: "scada enforce_whitelist", out: "MODBUS COMMAND WHITELIST ENFORCED. Unauthorized writes dropped.", hint: "Terapkan whitelist perintah kontrol: scada enforce_whitelist" },
+      { cmd: "scada stabilize_grid", out: "TURBINE FREQUENCY NOMINAL AT 50.00 Hz. INFRASTRUCTURE SECURE.", hint: "Stabilkan parameter jaringan listrik: scada stabilize_grid" }
+    ],
+    traceRate: 2.05, xp: 580, cr: 700
+  },
+
+  // STAGE 6 – LEGENDARY HACKER
+  { id: 26, stage: "STAGE 6: LEGENDARY HACKER", diff: "Extreme", title: "Blackout Protocol",
+    brief: "Serangan BGP hijacking memutus konektivitas antar pusat data utama.",
+    objective: "Validasi rute RPKI dan pulihkan tabel routing BGP global.",
+    host: "10.50.1.1", domain: "bgp-core.legend", tool: "bgpctl",
+    steps: [
+      { cmd: "bgpctl check_routes", out: "HIJACK DETECTED: Prefix 10.50.0.0/16 announced by rogue AS65099", hint: "Periksa tabel rute BGP: bgpctl check_routes" },
+      { cmd: "bgpctl enforce_rpki", out: "RPKI ORIGIN VALIDATION ENABLED. Invalid AS65099 routes rejected.", hint: "Aktifkan validasi rute RPKI: bgpctl enforce_rpki" },
+      { cmd: "bgpctl converge", out: "GLOBAL BACKBONE ROUTING RESTORED. 100% UPTIME.", hint: "Konvergensikan ulang rute jaringan: bgpctl converge" }
+    ],
+    traceRate: 2.15, xp: 630, cr: 780
+  },
+  { id: 27, stage: "STAGE 6: LEGENDARY HACKER", diff: "Extreme", title: "Ghost Network",
+    brief: "Jaringan bayangan menggunakan port knocking dan IPv6 tersembunyi untuk menyelinap.",
+    objective: "Temukan antarmuka jaringan siluman dan tutup terowongan tersembunyi.",
+    host: "10.50.2.7", domain: "shadow-net.legend", tool: "netghost",
+    steps: [
+      { cmd: "netghost scan_ipv6", out: "COVERT TUNNEL FOUND: sit0 -> fe80::dead:beef:1337", hint: "Pindai terowongan IPv6 tersembunyi: netghost scan_ipv6" },
+      { cmd: "netghost trace_knock", out: "PORT KNOCK SEQUENCE IDENTIFIED: [7001, 8002, 9003] -> PID 9912", hint: "Lacak urutan port knocking: netghost trace_knock" },
+      { cmd: "netghost purge_tunnel", out: "GHOST INTERFACE DESTROYED & KERNEL NETWORK STACK SEALED.", hint: "Hancurkan terowongan siluman: netghost purge_tunnel" }
+    ],
+    traceRate: 2.25, xp: 680, cr: 850
+  },
+  { id: 28, stage: "STAGE 6: LEGENDARY HACKER", diff: "Extreme", title: "Quantum Firewall",
+    brief: "Sistem pertahanan mutakhir dengan rotasi kunci enkripsi setiap 5 detik.",
+    objective: "Sinkronisasikan protokol Post-Quantum Cryptography (PQC) dan kunci gerbang.",
+    host: "10.50.3.250", domain: "qfw-gate.legend", tool: "qsec",
+    steps: [
+      { cmd: "qsec analyze_entropy", out: "KEY ROTATION DRIFT: 42ms desync on Kyber-1024 handshake.", hint: "Analisis entropi kunci kuantum: qsec analyze_entropy" },
+      { cmd: "qsec sync_lattice", out: "LATTICE CRYPTOGRAPHY SYNCHRONIZED. Zero packet loss.", hint: "Sinkronisasikan kriptografi lattice: qsec sync_lattice" },
+      { cmd: "qsec seal_quantum_gate", out: "QUANTUM FIREWALL OPERATING AT MAXIMUM INTEGRITY.", hint: "Kunci gerbang firewall kuantum: qsec seal_quantum_gate" }
+    ],
+    traceRate: 2.35, xp: 750, cr: 950
+  },
+  { id: 29, stage: "STAGE 6: LEGENDARY HACKER", diff: "Extreme", title: "Global Cyber Crisis",
+    brief: "Krisis siber multi-vektor menyerang DNS, Firewall, dan Pusat Data secara bersamaan.",
+    objective: "Jalankan protokol respons krisis terpadu untuk menstabilkan seluruh infrastruktur.",
+    host: "10.50.4.1", domain: "global-soc.legend", tool: "crisis",
+    steps: [
+      { cmd: "crisis triage", out: "3 CRITICAL INCIDENTS: [1] DNS Poisoning [2] FW Bypass [3] C2 Beacon", hint: "Lakukan triase insiden global: crisis triage" },
+      { cmd: "crisis deploy_countermeasures", out: "DNSSEC LOCKED | ZERO-TRUST FW ENFORCED | C2 SINKHOLED.", hint: "Luncurkan penanggulangan serentak: crisis deploy_countermeasures" },
+      { cmd: "crisis all_clear", out: "GLOBAL CYBER CRISIS CONTAINED. ALL SECTORS GREEN.", hint: "Deklarasikan status aman: crisis all_clear" }
+    ],
+    traceRate: 2.5, xp: 850, cr: 1100
+  },
+  { id: 30, stage: "STAGE 6: LEGENDARY HACKER", diff: "Extreme", title: "THE FINAL BREACH",
+    brief: "Ujian akhir Cyber Breach Protocol: Hadapi AI Pertahanan Adaptif OMEGA dalam simulasi penuh.",
+    objective: "Gabungkan analisis jaringan, forensik, dan konfigurasi firewall untuk menaklukkan OMEGA.",
+    host: "10.99.99.99", domain: "omega-core.protocol", tool: "omega",
+    steps: [
+      { cmd: "nmap 10.99.99.99", out: "OMEGA CORE: Ports 443, 8443, 9999 [ADAPTIVE AI SHIELD ACTIVE]", hint: "Pindai inti sistem OMEGA: nmap 10.99.99.99" },
+      { cmd: "fwctl isolate_omega", out: "AI SHIELD CONTAINED IN SANDBOX LOOPBACK.", hint: "Isolasi perisai adaptif OMEGA: fwctl isolate_omega" },
+      { cmd: "forensics verify_root", out: "CRYPTOGRAPHIC PROOF OF OWNERSHIP GENERATED.", hint: "Verifikasi kepemilikan sistem: forensics verify_root" },
+      { cmd: "omega complete_protocol", out: "OMEGA PROTOCOL MASTERED. WELCOME TO CYBER LEGEND STATUS.", hint: "Selesaikan protokol akhir: omega complete_protocol" }
+    ],
+    traceRate: 2.75, xp: 1200, cr: 2000
+  }
+];
+
+// ==================== 4. ACTIVE MISSION & ADAPTIVE AI FIREWALL ====================
+let activeMission = null;
+let stepIdx = 0;
+let tracePct = 0;
+let missionTimer = null;
+let startTime = 0;
+let missionMistakes = 0;
+let aiAggression = 1.0;
+
+function startMission(id) {
+  const m = MISSIONS.find(x => x.id === id);
+  if (!m || m.id > save.unlockedLevel) return;
+
+  if (missionTimer) clearInterval(missionTimer);
+  closeModal();
+  switchTab('term');
+
+  activeMission = m;
+  stepIdx = 0;
+  tracePct = 0;
+  missionMistakes = 0;
+  aiAggression = 1.0;
+  startTime = Date.now();
+
+  document.getElementById('terminal-out').innerHTML = '';
+  document.getElementById('mission-header').textContent = `MISI ${m.id}: ${m.title} (${m.host})`;
+  setAIState("AI FW: MONITORING", false);
+  updateTraceBar();
+  renderQuickChips();
+  updateTopology(m);
+
+  printTerm(`==================================================`, 't-sys');
+  printTerm(`[${m.stage}] LEVEL ${m.id}: ${m.title.toUpperCase()}`, 't-ok');
+  printTerm(`TARGET: ${m.domain} (${m.host}) | DIFFICULTY: ${m.diff}`, 't-sys');
+  printTerm(`OBJECTIVE: ${m.objective}`, 't-warn');
+  printTerm(`Ketik 'hint' jika membutuhkan panduan langkah berikutnya.`, '');
+  printTerm(`==================================================`, 't-sys');
+  addSOCLog(`Sesi lab dimulai untuk target ${m.host} (${m.domain})`);
+  sfxNet();
+
+  const stealthBonus = Math.max(0.45, 1 - (save.upgrades.stealth - 1) * 0.12);
+  missionTimer = setInterval(() => {
+    if (!activeMission) return;
+    const delta = activeMission.traceRate * aiAggression * stealthBonus;
+    tracePct = Math.min(100, tracePct + delta);
+    updateTraceBar();
+
+    if (tracePct >= 65 && aiAggression < 1.4) {
+      aiAggression = 1.45;
+      setAIState("AI FW: ADAPTIVE ALERT!", true);
+      printTerm(`[AI FIREWALL] Pola intrusi terdeteksi! Meningkatkan sensitivitas sensor.`, 't-ai');
+      addSOCLog(`PERINGATAN AI: Peningkatan anomali terdeteksi pada ${activeMission.host}`);
+      sfxAlert();
+    }
+
+    if (tracePct >= 100) {
+      failMission();
+    }
+  }, 1000);
+}
+
+function setAIState(label, isAlert) {
+  const el = document.getElementById('ai-state');
+  el.textContent = label;
+  el.className = isAlert ? 'ai-status alert' : 'ai-status';
+}
+
+function updateTraceBar() {
+  const val = Math.floor(tracePct);
+  const fill = document.getElementById('trace-meter');
+  const txt = document.getElementById('trace-val');
+  fill.style.width = val + '%';
+  txt.textContent = val + '%';
+  if (val < 50) { fill.style.background = 'var(--green)'; txt.style.color = 'var(--green)'; }
+  else if (val < 80) { fill.style.background = 'var(--amber)'; txt.style.color = 'var(--amber)'; }
+  else { fill.style.background = 'var(--red)'; txt.style.color = 'var(--red)'; }
+}
+
+function failMission() {
+  clearInterval(missionTimer);
+  missionTimer = null;
+  sfxAlert();
+  printTerm(`!!! [IDS LOCKDOWN] TRACE MENCAPAI 100% - KONEKSI DIPUTUS !!!`, 't-err');
+  printTerm(`AI Firewall memblokir sesi Anda. Ketik 'retry' atau pilih misi kembali.`, 't-err');
+  addSOCLog(`LOCKDOWN: Sesi diputus otomatis pada ${activeMission ? activeMission.host : 'sandbox'}`);
+  setAIState("AI FW: LOCKDOWN", true);
+  const failedId = activeMission.id;
+  activeMission = null;
+  renderQuickChips(failedId);
+}
+
+// ==================== 5. CLI COMMAND EXECUTION ====================
+document.getElementById('cli-input').addEventListener('keydown', (e) => {
+  sfxKey();
+  if (e.key === 'Enter') runCLI();
+});
+
+function printTerm(text, cls = '') {
+  const out = document.getElementById('terminal-out');
+  const div = document.createElement('div');
+  div.className = 't-line ' + cls;
+  div.textContent = text;
+  out.appendChild(div);
+  out.scrollTop = out.scrollHeight;
+}
+
+function runCLI() {
+  const inp = document.getElementById('cli-input');
+  const raw = inp.value.trim();
+  if (!raw) return;
+  inp.value = '';
+  printTerm(`operator@soc:~# ${raw}`, 't-cmd');
+
+  const lower = raw.toLowerCase();
+
+  if (lower === 'help') {
+    printTerm(`Perintah Umum: status, hint, clear, retry, start [1-30]`, 't-sys');
+    printTerm(`Tools Lab: ping, netscan, nmap, fwctl, tcpdump, sqlaudit, webscan, aclcheck, idsmon, sandbox, forensics, netdef, vulnscan, tlsmeta, adsec, soc, hunt, aicore, siem, kms, scada, bgpctl, netghost, qsec, crisis, omega`, 't-ok');
+    return;
+  }
+  if (lower === 'clear') {
+    document.getElementById('terminal-out').innerHTML = '';
+    return;
+  }
+  if (lower.startsWith('start ')) {
+    const n = parseInt(lower.split(' ')[1], 10);
+    if (n >= 1 && n <= 30 && n <= save.unlockedLevel) startMission(n);
+    else printTerm(`Level ${n} tidak valid atau masih terkunci.`, 't-err');
+    return;
+  }
+  if (lower === 'retry') {
+    startMission(save.unlockedLevel);
+    return;
+  }
+
+  if (!activeMission) {
+    printTerm(`Tidak ada sesi aktif. Pilih level di tab [30 MISI] atau ketik 'start ${save.unlockedLevel}'.`, 't-warn');
+    return;
+  }
+
+  const currentStep = activeMission.steps[stepIdx];
+
+  if (lower === 'hint') {
+    printTerm(`[ANALYST HINT] ${currentStep.hint}`, 't-warn');
+    tracePct = Math.min(99, tracePct + 4);
+    updateTraceBar();
+    return;
+  }
+  if (lower === 'status') {
+    printTerm(`Misi: ${activeMission.title} | Tahap: ${stepIdx + 1}/${activeMission.steps.length} | Trace: ${Math.floor(tracePct)}%`, 't-sys');
+    return;
+  }
+
+  // Check exact or normalized command match
+  if (raw.replace(/\s+/g, ' ') === currentStep.cmd) {
+    sfxSuccess();
+    printTerm(currentStep.out, 't-ok');
+    addSOCLog(`Perintah valid dieksekusi: ${raw}`);
+    stepIdx++;
+    renderQuickChips();
+
+    if (stepIdx >= activeMission.steps.length) {
+      completeMission();
+    }
+  } else {
+    missionMistakes++;
+    save.mistakesTotal++;
+    aiAggression = +(aiAggression + 0.25).toFixed(2);
+    const penalty = Math.max(4, 10 - save.upgrades.cpu);
+    tracePct = Math.min(100, tracePct + penalty);
+    updateTraceBar();
+    sfxAlert();
+    printTerm(`[!] Perintah tidak sesuai konteks investigasi saat ini (+${penalty}% Trace).`, 't-err');
+    printTerm(`[AI FIREWALL] Anomali sintaks terdeteksi. Ketik 'hint' jika butuh bantuan.`, 't-ai');
+    addSOCLog(`PERINGATAN: Perintah gagal '${raw}' memicu sensor AI.`);
+    if (tracePct >= 100) failMission();
+  }
+}
+
+function renderQuickChips(retryId = null) {
+  const bar = document.getElementById('cmd-chips');
+  bar.innerHTML = '';
+  const list = [];
+
+  if (!activeMission) {
+    list.push({ label: 'help', cmd: 'help' });
+    list.push({ label: `start ${retryId || save.unlockedLevel}`, cmd: `start ${retryId || save.unlockedLevel}` });
+  } else {
+    list.push({ label: 'hint', cmd: 'hint' });
+    list.push({ label: 'status', cmd: 'status' });
+    const step = activeMission.steps[stepIdx];
+    if (step) {
+      // Provide base tool chip to assist mobile typing without giving away full solution blindly
+      const baseTool = step.cmd.split(' ')[0];
+      list.push({ label: `tool: ${baseTool}`, fillOnly: baseTool + ' ' });
+      if (save.upgrades.forensics >= 2) {
+        list.push({ label: `auto-assist`, cmd: step.cmd });
+      }
+    }
+  }
+
+  list.forEach(item => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = item.label;
+    b.onclick = () => {
+      const inp = document.getElementById('cli-input');
+      if (item.fillOnly) {
+        inp.value = item.fillOnly;
+        inp.focus();
+      } else {
+        inp.value = item.cmd;
+        runCLI();
+      }
+    };
+    bar.appendChild(b);
+  });
+}
+
+// ==================== 6. MISSION COMPLETION & SCORING ====================
+function completeMission() {
+  clearInterval(missionTimer);
+  missionTimer = null;
+  sfxSuccess();
+
+  const elapsedSec = Math.max(1, Math.round((Date.now() - startTime) / 1000));
+  const accuracy = Math.max(40, 100 - missionMistakes * 15);
+  const speedBonus = elapsedSec < 30 ? 50 : (elapsedSec < 60 ? 25 : 0);
+  const totalXp = activeMission.xp + speedBonus;
+  const totalCr = activeMission.cr + Math.round(speedBonus / 2);
+
+  save.xp += totalXp;
+  save.credits += totalCr;
+  if (!save.completedLevels.includes(activeMission.id)) {
+    save.completedLevels.push(activeMission.id);
+  }
+  if (activeMission.id === save.unlockedLevel && save.unlockedLevel < 30) {
+    save.unlockedLevel++;
+  }
+
+  checkAchievements();
+  persist();
+
+  setAIState("AI FW: CONTAINED", false);
+  addSOCLog(`MISI ${activeMission.id} SELESAI: Akurasi ${accuracy}%, Waktu ${elapsedSec}d.`);
+
+  const completed = activeMission;
+  activeMission = null;
+  renderQuickChips();
+
+  document.getElementById('modal-title').textContent = `EVALUASI MISI #${completed.id} SELESAI`;
+  document.getElementById('modal-content').innerHTML = `
+    <div style="color:var(--green); font-weight:bold; margin-bottom:6px;">${completed.title} — BERHASIL</div>
+    <div>• Ketepatan Analisis: <b>${accuracy}%</b> (${missionMistakes} kesalahan)</div>
+    <div>• Waktu Penyelesaian: <b>${elapsedSec} detik</b></div>
+    <div>• Reward XP: <b style="color:var(--blue)">+${totalXp} XP</b></div>
+    <div>• Reward Kredit: <b style="color:var(--amber)">+$${totalCr}</b></div>
+    <div>• Peringkat Saat Ini: <b>${getRankTitle(save.xp)}</b></div>
+  `;
+  const nextId = Math.min(30, completed.id + 1);
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="btn" onclick="closeModal()">TUTUP</button>
+    <button class="btn primary" onclick="startMission(${nextId})">LANJUT LEVEL ${nextId}</button>
+  `;
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function checkAchievements() {
+  const unlock = (id, title) => {
+    if (!save.achievements.includes(id)) save.achievements.push(id);
+  };
+  if (save.completedLevels.length >= 1) unlock('first_blood', 'First Protocol Executed');
+  if (save.completedLevels.length >= 5) unlock('stage1', 'Beginner Firewall Specialist');
+  if (save.completedLevels.length >= 15) unlock('stage3', 'Advanced Forensics Analyst');
+  if (save.completedLevels.length >= 30) unlock('legend', 'Master of Cyber Breach Protocol');
+}
+
+// ==================== 7. UI TABS RENDERERS ====================
+function switchTab(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'levels') renderLevels();
+  if (name === 'tools') renderTools();
+  if (name === 'stats') renderStats();
+  if (name === 'soc') updateTopology(activeMission);
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+}
+
+function showBriefing(id) {
+  const m = MISSIONS.find(x => x.id === id);
+  document.getElementById('modal-title').textContent = `BRIEFING MISI #${m.id}`;
+  document.getElementById('modal-content').innerHTML = `
+    <div style="color:var(--blue); font-size:11px;">${m.stage} | Kesulitan: ${m.diff}</div>
+    <div style="color:var(--green); font-weight:bold; font-size:14px; margin:4px 0;">${m.title}</div>
+    <p style="margin-bottom:8px;">${m.brief}</p>
+    <div class="code-box">TARGET: ${m.domain} (${m.host})
+TOOLS UTAMA: ${m.tool}
+TUJUAN: ${m.objective}</div>
+  `;
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="btn" onclick="closeModal()">BATAL</button>
+    <button class="btn primary" onclick="startMission(${m.id})">MULAI OPERASI</button>
+  `;
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function renderLevels() {
+  const box = document.getElementById('levels-container');
+  box.innerHTML = '';
+  MISSIONS.forEach(m => {
+    const locked = m.id > save.unlockedLevel;
+    const done = save.completedLevels.includes(m.id);
+    const card = document.createElement('div');
+    card.className = 'card' + (locked ? ' locked' : '');
+    card.innerHTML = `
+      <div class="card-head">
+        <span class="card-title">LVL ${m.id}: ${m.title} ${done ? '✓' : ''}</span>
+        <span class="badge-stage">${m.diff}</span>
+      </div>
+      <div class="card-desc">${m.stage} • Host: ${m.host} • +${m.xp} XP</div>
+      <div class="btn-group">
+        <button class="btn info" ${locked ? 'disabled' : ''} onclick="showBriefing(${m.id})">BRIEFING</button>
+        <button class="btn primary" ${locked ? 'disabled' : ''} onclick="startMission(${m.id})">
+          ${locked ? 'TERKUNCI' : 'JALANKAN'}
+        </button>
+      </div>
+    `;
+    box.appendChild(card);
+  });
+}
+
+function renderTools() {
+  const box = document.getElementById('tools-container');
+  box.innerHTML = '';
+  const items = [
+    { key: 'cpu', name: 'Quantum Analysis CPU', desc: 'Mengurangi penalti Trace akibat kesalahan analisis.', base: 150 },
+    { key: 'stealth', name: 'Onion Proxy & Stealth Mask', desc: 'Memperlambat laju deteksi AI Firewall sebesar 12% per level.', base: 180 },
+    { key: 'forensics', name: 'SIEM Auto-Assist Module', desc: 'Level 2+ membuka tombol asisten perintah otomatis di terminal.', base: 250 }
+  ];
+  items.forEach(it => {
+    const lv = save.upgrades[it.key];
+    const cost = it.base * lv;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-head">
+        <span class="card-title">${it.name}</span>
+        <span class="badge-stage">LVL ${lv}/5</span>
+      </div>
+      <div class="card-desc">${it.desc}</div>
+      <button class="btn primary" ${lv >= 5 || save.credits < cost ? 'disabled' : ''} onclick="buyUpgrade('${it.key}', ${cost})">
+        ${lv >= 5 ? 'LEVEL MAKSIMAL' : 'UPGRADE WORKSTATION ($' + cost + ')'}
+      </button>
+    `;
+    box.appendChild(card);
+  });
+}
+
+function buyUpgrade(key, cost) {
+  if (save.credits < cost || save.upgrades[key] >= 5) return;
+  save.credits -= cost;
+  save.upgrades[key]++;
+  sfxSuccess();
+  persist();
+  renderTools();
+  renderQuickChips();
+}
+
+function renderStats() {
+  const box = document.getElementById('stats-container');
+  const achNames = {
+    first_blood: "First Protocol Executed (Selesaikan 1 Misi)",
+    stage1: "Beginner Firewall Specialist (Selesaikan 5 Misi)",
+    stage3: "Advanced Forensics Analyst (Selesaikan 15 Misi)",
+    legend: "Master of Cyber Breach Protocol (Selesaikan 30 Misi)"
+  };
+  const achHtml = Object.entries(achNames).map(([k, label]) => {
+    const got = save.achievements.includes(k);
+    return `<div style="color:${got ? 'var(--green)' : 'var(--muted)'}; margin-bottom:4px;">${got ? '[✓]' : '[ ]'} ${label}</div>`;
+  }).join('');
+
+  box.innerHTML = `
+    <div class="card">
+      <div class="card-title" style="margin-bottom:6px;">PROFIL OPERATOR & STATISTIK</div>
+      <div style="font-size:12px; line-height:1.6;">
+        • Peringkat: <b style="color:var(--blue)">${getRankTitle(save.xp)}</b><br>
+        • Total XP: <b>${save.xp} XP</b><br>
+        • Misi Diselesaikan: <b>${save.completedLevels.length} / 30</b><br>
+        • Total Kesalahan Analisis: <b>${save.mistakesTotal}</b>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:6px;">ACHIEVEMENTS</div>
+      <div style="font-size:11px;">${achHtml}</div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:6px;">LOCAL SOC LEADERBOARD</div>
+      <div style="font-size:11px; line-height:1.6;">
+        1. <b>ANDA (Operator)</b> — ${save.xp} XP [${getRankTitle(save.xp)}]<br>
+        2. Ghost_Spectre — 6,200 XP [ELITE]<br>
+        3. ZeroCool_ID — 3,400 XP [EXPERT]<br>
+        4. NetRunner_09 — 1,250 XP [OPERATOR]
+      </div>
+    </div>
+  `;
+}
+
+// ==================== 8. SOC CANVAS VISUALIZERS ====================
+function addSOCLog(msg) {
+  const box = document.getElementById('soc-logs');
+  const now = new Date().toTimeString().split(' ')[0];
+  const line = document.createElement('div');
+  line.textContent = `[${now}] ${msg}`;
+  box.prepend(line);
+}
+
+function updateTopology(mission) {
+  const canvas = document.getElementById('topo-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.offsetWidth || 340;
+  const h = canvas.height = 170;
+  ctx.clearRect(0, 0, w, h);
+
+  const nodes = [
+    { x: 45, y: 85, label: "SOC-HOST", color: "#00ff9d" },
+    { x: w * 0.42, y: 45, label: "AI-FW", color: "#00c8ff" },
+    { x: w * 0.42, y: 125, label: "IDS-SENSOR", color: "#ffb700" },
+    { x: w - 55, y: 85, label: mission ? mission.host : "SANDBOX", color: mission ? "#ff3355" : "#688296" }
+  ];
+
+  ctx.strokeStyle = "#1c2e3d";
+  ctx.lineWidth = 2;
+  [[0,1],[0,2],[1,3],[2,3]].forEach(([a,b]) => {
+    ctx.beginPath();
+    ctx.moveTo(nodes[a].x, nodes[a].y);
+    ctx.lineTo(nodes[b].x, nodes[b].y);
+    ctx.stroke();
+  });
+
+  nodes.forEach(n => {
+    ctx.fillStyle = n.color;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#dce8f2";
+    ctx.font = "10px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(n.label, n.x, n.y + 22);
+  });
+}
+
+let trafficPoints = Array(30).fill(15);
+setInterval(() => {
+  const base = activeMission ? 35 + Math.random() * 45 : 8 + Math.random() * 14;
+  trafficPoints.push(base);
+  trafficPoints.shift();
+  const rateEl = document.getElementById('pkt-rate');
+  if (rateEl) rateEl.textContent = Math.round(base * 12) + ' pkt/s';
+
+  const canvas = document.getElementById('traffic-canvas');
+  if (!canvas || !document.getElementById('view-soc').classList.contains('active')) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.offsetWidth || 340;
+  const h = canvas.height = 100;
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.strokeStyle = "#00ff9d";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  trafficPoints.forEach((val, idx) => {
+    const x = (idx / (trafficPoints.length - 1)) * w;
+    const y = h - (val / 100) * h;
+    if (idx === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}, 1000);
+
+// ==================== 9. INITIALIZE ====================
+updateHUD();
+renderQuickChips();
+printTerm("CYBER BREACH: THE HACKER PROTOCOL v1.0 [ISOLATED SANDBOX]", "t-ok");
+printTerm("Lingkungan pelatihan keamanan siber siap. Ketuk [30 MISI] atau ketik 'start 1'.", "t-sys");
+</script>
+</body>
+</html>
