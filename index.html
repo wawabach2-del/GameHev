@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>CyberNet OS v6.1 - Pro Edition</title>
+<title>CyberNet OS - Hardcore Pro Edition</title>
 <style>
   :root {
     --bg: #040706;
@@ -112,6 +112,7 @@
     background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
     padding: 10px;
   }
+  .card.locked { opacity: 0.4; }
   .card-title { font-weight: bold; color: var(--green); font-size: 13px; margin-bottom: 4px; }
   .card-sub { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
   .btn {
@@ -120,31 +121,50 @@
     background: rgba(0,255,136,0.1); color: var(--green); text-align: center;
   }
   .btn.primary { background: var(--green); color: #000; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    display: none; align-items: center; justify-content: center; padding: 14px; z-index: 100;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    width: 100%; max-width: 440px; background: var(--panel); border: 1px solid var(--green);
+    border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .modal-title { color: var(--green); font-size: 14px; font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  
+  .hex-target { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; background: #040706; padding: 8px; border-radius: 4px; border: 1px solid var(--border); }
+  .hex-slot { padding: 4px 8px; border: 1px solid var(--muted); border-radius: 4px; font-weight: bold; font-size: 12px; color: var(--muted); }
+  .hex-slot.done { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.1); }
+  .hex-slot.active { border-color: var(--amber); color: var(--amber); }
+  .hex-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .hex-btn { background: #0e1c17; border: 1px solid var(--border); color: var(--text); padding: 10px 4px; border-radius: 4px; font-family: inherit; font-size: 12px; font-weight: bold; cursor: pointer; }
 </style>
 </head>
 <body>
 
   <div class="hud">
-    <div class="hud-title">CYBERNET OS // PRO</div>
+    <div class="hud-title">CYBERNET OS // HARDCORE</div>
     <div class="hud-stats">
-      <div class="badge">LVL <span id="hud-lvl">1</span></div>
-      <div class="badge amber">$<span id="hud-credits">200</span></div>
+      <div class="badge">LVL <span id="hud-lvl">1</span>/30</div>
+      <div class="badge amber">$<span id="hud-credits">150</span></div>
     </div>
   </div>
 
   <div class="nav">
     <button id="tab-term" class="active" onclick="switchView('term')">TERMINAL</button>
-    <button id="tab-levels" onclick="switchView('levels')">TARGET</button>
+    <button id="tab-levels" onclick="switchView('levels')">30 LEVEL</button>
   </div>
 
   <div id="view-term" class="view active">
     <div class="status-strip">
       <div class="status-row">
-        <span id="target-label">TARGET: Belum ada</span>
-        <span id="sec-label">STATUS: Siaga</span>
+        <span id="target-label">TARGET: Belum terhubung</span>
+        <span id="sec-label">FW: -</span>
       </div>
       <div class="status-row">
-        <span style="color:var(--muted)">TRACE PELACAKAN (HARDCORE)</span>
+        <span style="color:var(--muted)">TRACE PELACAKAN (AGRESIF)</span>
         <span id="trace-pct" style="color:var(--green)">0%</span>
       </div>
       <div class="trace-bar-bg"><div id="trace-fill" class="trace-bar-fill"></div></div>
@@ -155,7 +175,7 @@
 
     <div class="term-input-row">
       <span class="prompt-sign">root@kali:~#</span>
-      <input id="term-input" class="term-input" type="text" placeholder="Ketik: help atau ping [ip]..." autocomplete="off">
+      <input id="term-input" class="term-input" type="text" placeholder="Ketik: help, ping, nmap..." autocomplete="off">
       <button class="send-btn" onclick="submitCommand()">EXEC</button>
     </div>
   </div>
@@ -164,24 +184,61 @@
     <div id="levels-list" class="scroll-pane"></div>
   </div>
 
+  <!-- MODAL HEX FIREWALL -->
+  <div id="modal-hex" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-title" style="display:flex; justify-content:space-between;">
+        <span>BYPASS HEX FIREWALL</span>
+        <span id="hex-timer" style="color:var(--amber)">10.0s</span>
+      </div>
+      <div style="font-size:11px; color:var(--muted)">Cocokkan urutan blok heksadesimal sebelum waktu habis:</div>
+      <div id="hex-target" class="hex-target"></div>
+      <div id="hex-grid" class="hex-grid"></div>
+    </div>
+  </div>
+
 <script>
-let state = { unlockedLevel: 1, credits: 200 };
-let activeTarget = null;
+let state = { unlockedLevel: 1, credits: 150 };
+let activeMission = null;
 let tracePct = 0;
 let traceInterval = null;
+let hexInterval = null;
+let hexSeq = [];
+let hexIndex = 0;
 
-const TARGETS = [
-  { id: 1, name: "Gateway Warnet Sektor-7", ip: "192.168.1.50", port: 21, file: "passwd_dump.txt", traceSpeed: 3.5 },
-  { id: 2, name: "Database Korporat Lokal", ip: "10.0.4.15", port: 3306, file: "financial_records.sql", traceSpeed: 4.8 },
-  { id: 3, name: "Server Pusat Intelijen", ip: "172.16.88.9", port: 443, file: "classified_op.dat", traceSpeed: 6.5 }
-];
+const LEVELS = Array.from({ length: 30 }, (_, i) => {
+  const id = i + 1;
+  const tier = id <= 10 ? 1 : (id <= 20 ? 2 : 3);
+  const ports = [21, 22, 80, 443, 3306, 8080];
+  const port = ports[id % ports.length];
+  const names = [
+    "Router Warnet Lokal", "Server Kampus Lama", "Kamera CCTV Kota", "Database Minimarket",
+    "Node ISP Regional", "Gateway Logistik", "Server Klinik Medis", "Portal Berita Kota",
+    "Arsip Kepolisian", "Mainframe Stasiun", "Bank Swasta Cabang", "Satelit Cuaca",
+    "Jaringan Kereta Cepat", "Lab Bioteknologi", "Bursa Saham Lokal", "Server Cloud Korporat",
+    "Sistem Pertahanan Udara", "Pembangkit Listrik", "Brankas Kripto", "Satelit Telekomunikasi",
+    "Markas Intelijen", "Reaktor Fusi Eksperimental", "Jaringan Orbital", "Sindikat Darknet",
+    "Mainframe Pentagon", "AI Sentral Keuangan", "Bunker Data Arktik", "Konsorsium Global",
+    "Inti Pertahanan Siber", "OMEGA CORE AI"
+  ];
+  return {
+    id,
+    name: names[i],
+    ip: `10.${tier * 15}.${10 + id}.${50 + id}`,
+    port,
+    file: `secret_lvl${id}.dat`,
+    reward: 100 + id * 40,
+    traceSpeed: +(0.8 + id * 0.12).toFixed(2), // Semakin tinggi level, trace makin cepat!
+    hexLen: Math.min(6, 3 + Math.floor(id / 8))
+  };
+});
 
 function switchView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
-  if (name === 'levels') renderTargets();
+  if (name === 'levels') renderLevels();
 }
 
 function printLine(text, cls = '') {
@@ -196,14 +253,14 @@ function printLine(text, cls = '') {
 function updateQuickChips() {
   const box = document.getElementById('quick-chips');
   box.innerHTML = '';
-  const chips = [{ label: 'help', cmd: 'help' }, { label: 'target 1', cmd: 'select 1' }];
+  const chips = [{ label: 'help', cmd: 'help' }, { label: `start ${state.unlockedLevel}`, cmd: `start ${state.unlockedLevel}` }];
   
-  if (activeTarget) {
-    if (!activeTarget.pinged) chips.push({ label: `ping ${activeTarget.ip}`, cmd: `ping ${activeTarget.ip}` });
-    if (activeTarget.pinged && !activeTarget.nmap) chips.push({ label: `nmap -sV ${activeTarget.ip}`, cmd: `nmap ${activeTarget.ip}` });
-    if (activeTarget.nmap && !activeTarget.connected) chips.push({ label: `ssh root@${activeTarget.ip}`, cmd: `ssh ${activeTarget.ip}` });
-    if (activeTarget.connected && !activeTarget.rooted) chips.push({ label: `exploit ${activeTarget.port}`, cmd: `exploit ${activeTarget.port}` });
-    if (activeTarget.rooted) chips.push({ label: 'ls', cmd: 'ls' }, { label: `cat ${activeTarget.file}`, cmd: `cat ${activeTarget.file}` });
+  if (activeMission) {
+    if (!activeMission.pinged) chips.push({ label: `ping ${activeMission.ip}`, cmd: `ping ${activeMission.ip}` });
+    if (activeMission.pinged && !activeMission.nmap) chips.push({ label: `nmap ${activeMission.ip}`, cmd: `nmap ${activeMission.ip}` });
+    if (activeMission.nmap && !activeMission.hexCleared) chips.push({ label: 'bypass_fw', cmd: 'bypass_fw' });
+    if (activeMission.hexCleared && !activeMission.rooted) chips.push({ label: `exploit ${activeMission.port}`, cmd: `exploit ${activeMission.port}` });
+    if (activeMission.rooted) chips.push({ label: 'ls', cmd: 'ls' }, { label: `cat ${activeMission.file}`, cmd: `cat ${activeMission.file}` });
   }
 
   chips.forEach(c => {
@@ -215,32 +272,38 @@ function updateQuickChips() {
   });
 }
 
-function selectTarget(id) {
+function startMission(id) {
+  if (id > state.unlockedLevel) return;
   if (traceInterval) clearInterval(traceInterval);
-  const t = TARGETS.find(x => x.id === id) || TARGETS[0];
-  activeTarget = { ...t, pinged: false, nmap: false, connected: false, rooted: false };
+  if (hexInterval) clearInterval(hexInterval);
+  document.getElementById('modal-hex').classList.remove('open');
+
+  const lvl = LEVELS[id - 1];
+  activeMission = { ...lvl, pinged: false, nmap: false, hexCleared: false, rooted: false };
   tracePct = 0;
   switchView('term');
-  
+
   document.getElementById('term-output').innerHTML = '';
-  printLine(`[!] Sesi baru diinisialisasi terhadap target: ${activeTarget.name}`, 'sys');
-  printLine(`[!] Target IP: ${activeTarget.ip} | Mode Keamanan: HARDCORE (Trace Aktif)`, 'warn');
-  printLine(`Langkah awal: Ketik "ping ${activeTarget.ip}"`, '');
+  printLine(`[!] KAMPANYE LEVEL ${lvl.id}: ${lvl.name.toUpperCase()} DIMULAI`, 'sys');
+  printLine(`[!] Target IP: ${lvl.ip} | Trace Speed: ${lvl.traceSpeed}x (Agresif)`, 'warn');
+  printLine(`Ketik "ping ${lvl.ip}" atau gunakan chip perintah cepat di bawah.`, '');
   
-  document.getElementById('target-label').textContent = `TARGET: ${activeTarget.ip}`;
+  document.getElementById('target-label').textContent = `TARGET: ${lvl.ip}`;
+  document.getElementById('sec-label').textContent = `FW: AKTIF`;
   updateQuickChips();
 
-  // Trace otomatis berjalan agresif
   traceInterval = setInterval(() => {
-    if (!activeTarget) return;
-    tracePct = Math.min(100, tracePct + activeTarget.traceSpeed);
+    if (!activeMission) return;
+    tracePct = Math.min(100, tracePct + activeMission.traceSpeed);
     document.getElementById('trace-fill').style.width = tracePct + '%';
     document.getElementById('trace-pct').textContent = Math.floor(tracePct) + '%';
     
     if (tracePct >= 100) {
       clearInterval(traceInterval);
-      printLine('!!! PERINGATAN: KONEKSI DITUTUP PAKSA. HOST TELAH MELACAK LOKASI ANDA! !!!', 'err');
-      activeTarget = null;
+      if (hexInterval) clearInterval(hexInterval);
+      document.getElementById('modal-hex').classList.remove('open');
+      printLine('!!! TRACE 100%! KONEKSI DIPUTUS PAKSA OLEH FIREWALL TARGET! !!!', 'err');
+      activeMission = null;
       document.getElementById('target-label').textContent = 'TARGET: Terputus';
       updateQuickChips();
     }
@@ -263,73 +326,17 @@ function submitCommand() {
   const arg = parts[1] || '';
 
   if (cmd === 'help') {
-    printLine('Perintah Real CLI: select [1-3], ping [ip], nmap [ip], ssh [ip], exploit [port], ls, cat [file], clear', 'sys');
+    printLine('Perintah: start [1-30], ping [ip], nmap [ip], bypass_fw, exploit [port], ls, cat [file], clear', 'sys');
   } else if (cmd === 'clear') {
     document.getElementById('term-output').innerHTML = '';
-  } else if (cmd === 'select') {
-    selectTarget(parseInt(arg) || 1);
-  } else if (!activeTarget) {
-    printLine('Belum memilih target. Ketik "select 1" atau pilih di tab TARGET.', 'err');
+  } else if (cmd === 'start') {
+    startMission(parseInt(arg) || state.unlockedLevel);
+  } else if (!activeMission) {
+    printLine('Tidak ada misi aktif. Pilih level di tab [30 LEVEL] atau ketik "start 1".', 'err');
   } else if (cmd === 'ping') {
-    if (arg !== activeTarget.ip) { printLine('Host tidak merespons (Timeout).', 'err'); return; }
-    activeTarget.pinged = true;
-    printLine(`PINGS ${activeTarget.ip} 56(84) bytes of data. 64 bytes from ${activeTarget.ip}: icmp_seq=1 ttl=54 time=12.4ms`, 'ok');
-    printLine('-> Host aktif. Lanjutkan dengan pemindaian port: "nmap [ip]"', 'sys');
+    if (arg !== activeMission.ip) { printLine('Host unreachable.', 'err'); return; }
+    activeMission.pinged = true;
+    printLine(`PING ${activeStatus(activeMission.ip)} 56 bytes. Host aktif.`, 'ok');
+    printLine('-> Jalankan pemindaian port: "nmap [ip]"', 'sys');
     updateQuickChips();
-  } else if (cmd === 'nmap') {
-    if (!activeTarget.pinged) { printLine('Lakukan ping terlebih dahulu untuk memastikan host hidup.', 'warn'); return; }
-    activeTarget.nmap = true;
-    printLine(`Starting Nmap scan... Port ${activeTarget.port}/TCP OPEN (vulnerable service)`, 'ok');
-    printLine('-> Port terbuka ditemukan. Lakukan koneksi SSH/Telnet: "ssh [ip]"', 'sys');
-    updateQuickChips();
-  } else if (cmd === 'ssh' || cmd === 'connect') {
-    if (!activeTarget.nmap) { printLine('Port target belum dipindai dengan nmap!', 'err'); return; }
-    activeTarget.connected = true;
-    printLine(`Connecting to ${activeTarget.ip}... Handshake successful. Masukkan exploit port.`, 'ok');
-    updateQuickChips();
-  } else if (cmd === 'exploit') {
-    if (!activeTarget.connected) { printLine('Belum terhubung ke sesi shell target.', 'err'); return; }
-    if (parseInt(arg) !== activeTarget.port) { printLine(`Eksploitasi gagal pada port ${arg}. Gunakan port terbuka (${activeTarget.port}).`, 'err'); return; }
-    activeTarget.rooted = true;
-    printLine(`[+] Buffer overflow berhasil dieksekusi! Root shell terbuka [UID: 0].`, 'ok');
-    printLine('-> Periksa file direktori dengan perintah: "ls"', 'sys');
-    updateQuickChips();
-  } else if (cmd === 'ls') {
-    if (!activeTarget.rooted) { printLine('Permission denied.', 'err'); return; }
-    printLine(`total 32k\ndrwxr-xr-x  2 root root 4096 Jan 20 sys\n-rw-r--r--  1 root root  512 Jan 20 ${activeTarget.file}`, 'ok');
-  } else if (cmd === 'cat') {
-    if (!activeTarget.rooted) { printLine('Permission denied.', 'err'); return; }
-    if (arg === activeTarget.file) {
-      clearInterval(traceInterval);
-      state.credits += 150;
-      printLine(`[+] DOKUMEN "${activeTarget.file}" BERHASIL DIEKSTRAKSI KE LOKAL!`, 'ok');
-      printLine(`[+] Hadiah Misi: +$150 Kredit terkumpul.`, 'ok');
-      document.getElementById('hud-credits').textContent = state.credits;
-    } else {
-      printLine(`File "${arg}" tidak ditemukan atau korup.`, 'err');
-    }
-  } else {
-    printLine(`Command not found: ${cmd}. Ketik "help".`, 'err');
-  }
-}
-
-function renderTargets() {
-  const list = document.getElementById('levels-list');
-  list.innerHTML = '';
-  TARGETS.forEach(t => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <div class="card-title">Target #${t.id}: ${t.name}</div>
-      <div class="card-sub">IP: ${t.ip} | Port: ${t.port} | Risiko Trace: Tinggi</div>
-      <button class="btn primary" onclick="selectTarget(${t.id})">TARGETKAN OPERASI</button>
-    `;
-    list.appendChild(card);
-  });
-}
-
-updateQuickChips();
-printLine('CyberNet OS v6.1 Pro siap. Ketik "help" atau pilih target.', 'ok');
-</script>
-</body>
-</html>
+  } else if (cmd === 'nmap
